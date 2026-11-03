@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hospital Patient Record System</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Toast Notification -->
+  <div id="toast"></div>
+
+  <!-- Header Bar -->
+  <header class="header-bar">
+    <div class="logo-area">
+      <div class="logo-icon">+</div>
+      <div class="header-title">
+        <h1>Hospital Patient Record System</h1>
+        <p>A Web-Based Centralized Record Management System</p>
+      </div>
+    </div>
+    <div id="userHeaderSection" class="user-badge" style="display: none;">
+      <div>
+        <span id="headerUserName" style="font-weight: 600;">User</span>
+        <span id="headerUserRole" class="role-tag">Role</span>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="logout()">Logout</button>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs (Visible when logged in) -->
+  <nav id="navBar" class="nav-tabs" style="display: none;">
+    <button class="nav-tab-btn active" data-tab="dashboardTab" data-roles="Admin" onclick="switchTab('dashboardTab')">📊 Dashboard</button>
+    <button class="nav-tab-btn" data-tab="patientsTab" data-roles="Admin,Receptionist,Nurse" onclick="switchTab('patientsTab')">🧑 Patients</button>
+    <button class="nav-tab-btn" data-tab="doctorsTab" data-roles="Admin" onclick="switchTab('doctorsTab')">👨‍⚕️ Doctors</button>
+    <button class="nav-tab-btn" data-tab="appointmentsTab" data-roles="Admin,Doctor,Receptionist,Patient" onclick="switchTab('appointmentsTab')">📅 Appointments</button>
+    <button class="nav-tab-btn" data-tab="medicalRecordsTab" data-roles="Admin,Doctor,Nurse,Patient" onclick="switchTab('medicalRecordsTab')">📋 Medical Records</button>
+    <button class="nav-tab-btn" data-tab="searchTab" data-roles="Admin,Doctor,Nurse,Receptionist" onclick="switchTab('searchTab')">🔍 Search Records</button>
+    <button class="nav-tab-btn" data-tab="reportsTab" data-roles="Admin" onclick="switchTab('reportsTab')">📄 Reports</button>
+    <button class="nav-tab-btn" data-tab="usersTab" data-roles="Admin" onclick="switchTab('usersTab')">⚙️ User Management</button>
+    <button class="nav-tab-btn" data-tab="backupTab" data-roles="Admin" onclick="switchTab('backupTab')">💾 Backup</button>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="main-content">
+
+    <!-- ===================================================================
+         1. LOGIN SECTION (FR1)
+         =================================================================== -->
+    <div id="loginSection" class="login-wrapper">
+      <div class="login-header">
+        <div class="logo-icon">+</div>
+        <h2>System Login</h2>
+        <p>Please enter your credentials and select your role to proceed.</p>
+      </div>
+
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label for="loginUsername">Username</label>
+          <input type="text" id="loginUsername" class="form-control" required placeholder="Enter username">
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" class="form-control" required placeholder="Enter password">
+        </div>
+        <!--<div class="form-group">
+          <label for="loginRole">Select Role</label>
+          <select id="loginRole" class="form-control" required>
+            <option value="Admin">Admin</option>
+            <option value="Doctor">Doctor</option>
+            <option value="Nurse">Nurse</option>
+            <option value="Receptionist">Receptionist</option>
+            <option value="Patient">Patient</option>
+          </select>
+        </div>-->
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">Login to System</button>
+      </form>
+      </div>
+      
+
+    <!-- ===================================================================
+         2. DASHBOARD TAB
+         =================================================================== -->
+    <div id="dashboardTab" class="tab-pane">
+      <div class="grid-4">
+        <div class="stat-box">
+          <div class="stat-info">
+            <h3>Total Patients</h3>
+            <div id="statPatients" class="stat-num">0</div>
+          </div>
+          <div class="stat-icon">🧑</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-info">
+            <h3>Total Doctors</h3>
+            <div id="statDoctors" class="stat-num">0</div>
+          </div>
+          <div class="stat-icon">👨‍⚕️</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-info">
+            <h3>Scheduled Visits</h3>
+            <div id="statAppointments" class="stat-num">0</div>
+          </div>
+          <div class="stat-icon">📅</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-info">
+            <h3>Medical Records</h3>
+            <div id="statRecords" class="stat-num">0</div>
+          </div>
+          <div class="stat-icon">📋</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Welcome to Hospital Patient Record System</h2>
+        </div>
+        <p style="color: #475569; margin-bottom: 1rem;">
+          This web application replaces manual paper files with a centralized, searchable digital system.
+          Use the navigation tabs above to manage hospital records according to your role permissions.
+        </p>
+        <div class="viva-box" style="margin-top: 0;">
+          <strong>Active User Session:</strong> <span id="sessionDetails">Logged In</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================================
+         3. PATIENT MANAGEMENT TAB (FR3)
+         =================================================================== -->
+    <div id="patientsTab" class="tab-pane">
+      <div class="card" id="patientFormCard">
+        <div class="card-header">
+          <h2 id="patientFormTitle">Add New Patient (FR3)</h2>
+        </div>
+        <form id="patientForm" onsubmit="savePatient(event)">
+          <input type="hidden" id="patientId">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="patientName">Full Name *</label>
+              <input type="text" id="patientName" class="form-control" required placeholder="e.g. Ramesh Kumar">
+            </div>
+            <div class="form-group">
+              <label for="patientDob">Date of Birth (DOB) *</label>
+              <input type="date" id="patientDob" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="patientGender">Gender *</label>
+              <select id="patientGender" class="form-control" required>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+          <!--<div class="form-row">
+            <div class="form-group">
+              <label for="patientPhone">Phone Number *</label>
+              <input type="tel" id="patientPhone" class="form-control" required placeholder="e.g. 9876543210">
+            </div>
+            <div class="form-group">
+              <label for="patientAddress">Home Address *</label>
+              <input type="text" id="patientAddress" class="form-control" required placeholder="e.g. 45 Park Avenue, City">
+            </div>
+          </div>
+          <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary" onclick="resetPatientForm()">Clear</button>-->
+            <div class="form-row">
+            <div class="form-group">
+              <label for="patientPhone">Phone Number *</label>
+              <input type="tel" id="patientPhone" class="form-control" required placeholder="e.g. 9876543210">
+            </div>
+            <div class="form-group">
+              <label for="patientAddress">Home Address *</label>
+              <input type="text" id="patientAddress" class="form-control" required placeholder="e.g. 45 Park Avenue, City">
+            </div>
+          </div>
+
+          <div class="form-row" id="patientLoginFields">
+            <div class="form-group">
+              <label for="patientUsername">Patient Login Username *</label>
+              <input type="text" id="patientUsername" class="form-control" required placeholder="e.g. rahul_verma">
+            </div>
+            <div class="form-group">
+              <label for="patientPassword">Patient Login Password *</label>
+              <input type="password" id="patientPassword" class="form-control" required placeholder="Create a password">
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary" onclick="resetPatientForm()">Clear</button>
+            <button type="submit" class="btn btn-primary" id="patientSubmitBtn">Save Patient Record</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Registered Patients List</h2>
+          <button class="btn btn-secondary btn-sm" onclick="loadPatients()">🔄 Refresh</button>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Patient ID</th>
+                <th>Full Name</th>
+                <th>DOB</th>
+                <th>Gender</th>
+                <th>Phone</th>
+                <th>Address</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="patientsTableBody">
+              <tr><td colspan="7" style="text-align: center;">Loading patients...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================================
+         4. DOCTOR MANAGEMENT TAB (FR4)
+         =================================================================== -->
+    <div id="doctorsTab" class="tab-pane">
+      <div class="card" id="doctorFormCard">
+        <div class="card-header">
+          <h2 id="doctorFormTitle">Add New Doctor (FR4)</h2>
+        </div>
+        <form id="doctorForm" onsubmit="saveDoctor(event)">
+          <input type="hidden" id="doctorId">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="doctorName">Doctor Name *</label>
+              <input type="text" id="doctorName" class="form-control" required placeholder="e.g. Dr. Rajesh Sharma">
+            </div>
+            <div class="form-group">
+              <label for="doctorSpec">Specialization *</label>
+              <input type="text" id="doctorSpec" class="form-control" required placeholder="e.g. Cardiology, Pediatrics">
+            </div>
+            <div class="form-group">
+              <label for="doctorPhone">Phone Number *</label>
+              <input type="tel" id="doctorPhone" class="form-control" required placeholder="e.g. 9876543211">
+            </div>
+          </div>
+          <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary" onclick="resetDoctorForm()">Clear</button>
+            <button type="submit" class="btn btn-primary" id="doctorSubmitBtn">Save Doctor</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Doctor Profiles List</h2>
+          <button class="btn btn-secondary btn-sm" onclick="loadDoctors()">🔄 Refresh</button>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Doctor ID</th>
+                <th>Doctor Name</th>
+                <th>Specialization</th>
+                <th>Phone Number</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="doctorsTableBody">
+              <tr><td colspan="5" style="text-align: center;">Loading doctors...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================================
+         5. APPOINTMENT MANAGEMENT TAB (FR5)
+         =================================================================== -->
+    <div id="appointmentsTab" class="tab-pane">
+      <div class="card" id="appointmentFormCard">
+        <div class="card-header">
+          <h2> Book Appointment </h2>
+        </div>
+        <form id="appointmentForm" onsubmit="bookAppointment(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="apptPatientSelect">Select Patient *</label>
+              <select id="apptPatientSelect" class="form-control" required>
+                <option value="">-- Choose Patient --</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="apptDoctorSelect">Select Doctor *</label>
+              <select id="apptDoctorSelect" class="form-control" required>
+                <option value="">-- Choose Doctor --</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="apptDate">Appointment Date *</label>
+              <input type="date" id="apptDate" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="apptTime">Appointment Time *</label>
+              <input type="time" id="apptTime" class="form-control" required value="10:00">
+            </div>
+            <!--<div class="form-group">
+              <label for="apptStatus">Initial Status</label>
+              <select id="apptStatus" class="form-control">
+                <option value="Scheduled">Scheduled</option>
+                <option value="Completed">Completed</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+            </div>-->
+          </div>
+          <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+            <button type="submit" class="btn btn-primary">Book</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Scheduled Appointments</h2>
+          <button class="btn btn-secondary btn-sm" onclick="loadAppointments()">🔄 Refresh</button>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Appt ID</th>
+                <th>Patient Name</th>
+                <th>Doctor</th>
+                <th>Specialization</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Status</th>
+                <th id="apptActionsHeader">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="appointmentsTableBody">
+              <tr><td colspan="8" style="text-align: center;">Loading appointments...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================================
+         6. MEDICAL RECORD MANAGEMENT TAB (FR6)
+         =================================================================== -->
+    <div id="medicalRecordsTab" class="tab-pane">
+      <div class="card" id="recordFormCard">
+        <div class="card-header">
+          <h2>Add Medical Check-up Record (FR6)</h2>
+        </div>
+        <form id="medicalRecordForm" onsubmit="saveMedicalRecord(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="medPatientSelect">Select Patient *</label>
+              <select id="medPatientSelect" class="form-control" required>
+                <option value="">-- Choose Patient --</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="medDoctorSelect">Consulting Doctor *</label>
+              <select id="medDoctorSelect" class="form-control" required>
+                <option value="">-- Choose Doctor --</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="medVisitDate">Visit Date *</label>
+              <input type="date" id="medVisitDate" class="form-control" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="medDiagnosis">Diagnosis / Illness *</label>
+            <input type="text" id="medDiagnosis" class="form-control" required placeholder="e.g. Mild Hypertension, Viral Fever">
+          </div>
+          <div class="form-group">
+            <label for="medTreatment">Treatment & Medicines Prescribed *</label>
+            <textarea id="medTreatment" class="form-control" required placeholder="e.g. Paracetamol 500mg TDS for 3 days, plenty of fluids"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="medNotes">Doctor / Nurse Consultation Notes</label>
+            <textarea id="medNotes" class="form-control" placeholder="e.g. Follow up after 5 days, BP checked 120/80"></textarea>
+          </div>
+          <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+            <button type="submit" class="btn btn-primary">Save Medical Record</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Patient Medical History Timeline</h2>
+          <button class="btn btn-secondary btn-sm" onclick="loadMedicalRecords()">🔄 Refresh</button>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Record ID</th>
+                <th>Patient Name</th>
+                <th>Consulting Doctor</th>
+                <th>Visit Date</th>
+                <th>Diagnosis</th>
+                <th>Treatment</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody id="medicalRecordsTableBody">
+              <tr><td colspan="7" style="text-align: center;">Loading medical records...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================================
+         7. SEARCH PATIENT RECORDS TAB (FR7)
+         =================================================================== -->
+    <div id="searchTab" class="tab-pane">
+      <div class="card">
+        <div class="card-header">
+          <h2>Quick Search Patient Records (FR7)</h2>
+        </div>
+        <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 1rem;">
+          Find patient files instantly by entering Patient Name, Patient ID, or Phone Number.
+        </p>
+        <div style="display: flex; gap: 0.75rem; max-width: 650px;">
+          <input type="text" id="searchInput" class="form-control" placeholder="Search by Patient Name, ID, or Phone Number..." onkeyup="if(event.key==='Enter') executeSearch()">
+          <button class="btn btn-primary" onclick="executeSearch()">🔍 Search</button>
+          <button class="btn btn-secondary" onclick="clearSearch()">Clear</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Search Results</h2>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Patient ID</th>
+                <th>Full Name</th>
+                <th>DOB</th>
+                <th>Gender</th>
+                <th>Phone</th>
+                <th>Address</th>
+                <th>Full History</th>
+              </tr>
+            </thead>
+            <tbody id="searchResultsTableBody">
+              <tr><td colspan="7" style="text-align: center;">Enter search term above to find patient records.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Patient Full Details Modal / Panel -->
+      <div id="patientDetailsCard" class="card" style="display: none; border-left: 4px solid var(--primary);">
+        <div class="card-header">
+          <h2 id="patientDetailHeader">Patient Profile Details</h2>
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('patientDetailsCard').style.display='none'">✕ Close</button>
+        </div>
+        <div id="patientDetailContent"></div>
+      </div>
+    </div>
+
+    <!-- ===================================================================
+         8. GENERATE REPORTS TAB (FR8)
+         =================================================================== -->
+    <div id="reportsTab" class="tab-pane">
+      <div class="card no-print">
+        <div class="card-header">
+          <h2>Generate Hospital Reports (FR8)</h2>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="reportType">Select Report Type</label>
+            <select id="reportType" class="form-control">
+              <option value="appointments">Appointments Summary Report</option>
+              <option value="visits">Patient Visits & Consultation History Report</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="reportStartDate">Start Date (Optional)</label>
+            <input type="date" id="reportStartDate" class="form-control">
+          </div>
+          <div class="form-group">
+            <label for="reportEndDate">End Date (Optional)</label>
+            <input type="date" id="reportEndDate" class="form-control">
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+          <button class="btn btn-primary" onclick="generateReport()">Generate Report</button>
+          <button class="btn btn-success" onclick="window.print()">🖨️ Print Report</button>
+        </div>
+      </div>
+
+      <div class="card" id="reportResultCard">
+        <div class="card-header">
+          <h2 id="reportTitle">Hospital Report View</h2>
+          <span style="font-size: 0.85rem; color: #64748b;" id="reportGenDate"></span>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table" id="reportTable">
+            <thead id="reportTableHead">
+              <tr><th>#</th></tr>
+            </thead>
+            <tbody id="reportTableBody">
+              <tr><td>Click "Generate Report" above to compile data.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================================
+         9. USER / ADMIN MANAGEMENT TAB (FR2)
+         =================================================================== -->
+    <div id="usersTab" class="tab-pane">
+      <div class="card">
+        <div class="card-header">
+          <h2>Add New System User Account (FR2)</h2>
+        </div>
+        <form id="userForm" onsubmit="saveUser(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="userName">Staff Name *</label>
+              <input type="text" id="userName" class="form-control" required placeholder="e.g. Dr. Ramesh Gupta">
+            </div>
+            <div class="form-group">
+              <label for="userRole">Assigned Role *</label>
+              <select id="userRole" class="form-control" required>
+                <option value="Admin">Admin</option>
+                <option value="Doctor">Doctor</option>
+                <option value="Nurse">Nurse</option>
+                <option value="Receptionist">Receptionist</option>
+                <option value="Patient">Patient</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="userUsername">Username *</label>
+              <input type="text" id="userUsername" class="form-control" required placeholder="e.g. dr_gupta">
+            </div>
+            <div class="form-group">
+              <label for="userPassword">Password *</label>
+              <input type="password" id="userPassword" class="form-control" required placeholder="Enter password">
+            </div>
+          </div>
+          <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+            <button type="submit" class="btn btn-primary">Create User Account</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2>System User Accounts List</h2>
+          <button class="btn btn-secondary btn-sm" onclick="loadUsers()">🔄 Refresh</button>
+        </div>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>User ID</th>
+                <th>Staff Name</th>
+                <th>Role</th>
+                <th>Username</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody">
+              <tr><td colspan="5" style="text-align: center;">Loading users...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================================
+         10. BACKUP & SYSTEM SETTINGS TAB (Section 5.7)
+         =================================================================== -->
+    <div id="backupTab" class="tab-pane">
+      <div class="card">
+        <div class="card-header">
+          <h2>Database Backup & Recovery (Section 5.7)</h2>
+        </div>
+        <p style="color: #475569; margin-bottom: 1.25rem;">
+          Regular backups protect confidential patient files from data loss. Click the button below to take a complete snapshot of all tables in <code>hospital_db</code>.
+        </p>
+        <button class="btn btn-success" onclick="takeBackup()">💾 Create Database Backup Snapshot</button>
+        <div id="backupOutput" style="margin-top: 1.5rem; display: none;" class="viva-box"></div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
